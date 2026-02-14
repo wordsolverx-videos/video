@@ -21,13 +21,21 @@ def run_command(command, cwd=None):
         return None
 
 def update_video_repo(video_id):
-    base_path = os.getcwd()
-    repo_path = os.path.join(base_path, REPO_DIR)
+    # Use the directory where THIS script is located as the base
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_path = os.path.join(script_dir, REPO_DIR)
     
+    # Check for PAT in environment (for GitHub Actions)
+    pat = os.environ.get("VIDEO_REPO_PAT")
+    auth_url = REPO_URL
+    if pat:
+        # Inject PAT into URL: https://TOKEN@github.com/...
+        auth_url = REPO_URL.replace("https://", f"https://{pat}@")
+
     # 1. Setup Repo (Clone or Pull)
     if not os.path.exists(repo_path):
         print(f"Cloning repo to {repo_path}...")
-        run_command(f"git clone {REPO_URL} {REPO_DIR}")
+        run_command(f"git clone {auth_url} {REPO_DIR}", cwd=script_dir)
     else:
         print(f"Pulling latest changes in {repo_path}...")
         run_command("git pull", cwd=repo_path)
